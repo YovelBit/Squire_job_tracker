@@ -1,3 +1,4 @@
+
 Entity: Job
     Fields:
         Mandatory:
@@ -34,8 +35,8 @@ Entity: Job
     
     Constraints: 
         UNIQUE (company, title, date_applied)
-        CHECK (status IN ('Applied','HomeAssignment','Interview','Offer','OfferAccepted','Rejected'))
-        CHECK (referred) (0/1)
+        CHECK (status IN ('Applied','Home_Assignment','Interview','Offer','Offer_Accepted','Rejected'))
+        CHECK (referred IN (0,1))
     
     INDEXES:
         CREATE INDEX idx_jobs_status ON jobs(status);

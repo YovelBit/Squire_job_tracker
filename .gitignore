@@ -12,3 +12,4 @@ __pycache__/
 
 # SQLite DB (for dev only)
 *.db
+"squire.db" 
