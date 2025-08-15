@@ -62,3 +62,13 @@ Cleaner and safer schema.
 Consistent, case-insensitive filtering.
 
 Stronger validation to prevent inconsistent or invalid data.
+
+**Day 5** — update_jobs and util.py
+
+Implemented update_job() with dynamic column updates and RETURNING * support.
+
+Enhanced normalize() for stricter data handling and date normalization, now able to be used as part of update_jobs.
+
+Moved all helper functions, constants, and structures (e.g., template, STATUS_MAP, display_key) into a new util.py module, keeping crude.py focused and lean.
+
+Added print_jobs() with a clean, readable output format for listing job entries.
