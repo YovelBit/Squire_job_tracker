@@ -6,19 +6,28 @@ string_to_value_map = {
     # Used only for ORDER BY in list_jobs() to prevent SQL injection,
     # since SQL parameters cannot be used for column names.
     "job_id": "job_id",
-    "company": "company_display",
-    "company_key": "company_key",
-    "title": "title_display",
-    "title_key": "title_key",
+    "company": "company_key",
+    "title": "title_key",
     "date_applied": "date_applied",
     "status": "status",
     "referred": "referred",
     "last_updated": "last_updated",
-    "location": "location_display",
-    "location_key": "location_key",
+    "location": "location_key",
     "next_action": "next_action",
-    "source": "source_display",
-    "source_key": "source_key",
+    "source": "source_key",
+}
+
+operators = {
+    "=" : "=",
+    "!=": "<>",
+    "<": "<",
+    ">": ">",
+    "<=": "<=",
+    ">=": ">=",
+    "like": "LIKE",
+    "in" :"IN",
+    "between": "BETWEEN",
+    "is": "IS",
 }
 
 template = MappingProxyType({
@@ -119,7 +128,7 @@ def normalize(job_data):
         if d in job_data and job_data.get(d) is not None:
             job_data[d] = normalize_date(job_data[d])
 
-def print_jobs(rows):
+def print_jobs_system(rows):
     if not rows:
         print("No jobs found.")
         return
@@ -131,3 +140,21 @@ def print_jobs(rows):
             if value is not None:
                 print(f"{key:15}: {value}")
         print("-" * 30)  # separator line
+
+def build_condition(field: str, op: str, values):
+    #filters is a list, where each entry is a list, (field, op, values), values can emptty (op == isnull), a single (op == >), or a list (op == in)
+    #the function accepts parameters that have been already mapped by string_to_value_map, and operators, The mapping has been done in the caller to this function
+    if field in {"date_applied", "next_action", "last_updated"}:
+        values = normalize_date(values[0])
+    
+    elif op == "IN":
+        values = "(" + ",".join(str(values)) + ")"
+    
+    elif op == "BETWEEN":
+        values = str(values[0]) + "AND" + str(values[1])
+    
+    else:
+        values = str(values[0])
+
+    return field + op + values 
+    

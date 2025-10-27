@@ -27,6 +27,7 @@ def create_table(connection):
         cursor.close()
 
 def list_jobs(connection, field ="job_id", order="asc"):
+    #add filters to signature, add a check if filers is empty, if not, add WHERE and then build the conditions, else, skip to ORDER BY
     cursor = connection.cursor()
     col = str(field).lower().strip()
     if col in string_to_value_map:
