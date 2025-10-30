@@ -1,118 +1,138 @@
-import sqlite3
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import asc, desc, func
+from app.db import SessionLocal
+from app.models import Job
 import datetime
 from pathlib import Path
-from util import *
+from app.util import *
 
-schema_db_path = Path(__file__).resolve().parent.parent / "db/schema.sql"
 
-def checklist(job_data):
-    required = ["company_display", "title_display", "status"]
-    for field in required:
-        if not job_data.get(field):
-            return False
-    if not job_data.get("date_applied"):
-        job_data["date_applied"] = date.today()
-    return True
 
-def create_table(connection):
-    with open(schema_db_path, 'r') as file:  #using with to automatically close the file
-        schema_sql = file.read()
-    cursor = connection.cursor()
-    try:  #using try and except to handle errors, and finally to close the cursor when ending.
-        cursor.executescript(schema_sql)
-        connection.commit()
-    except sqlite3.Error as e:
-        print(f"Error creating table: {e}")
-    finally:
-        cursor.close()
 
-def list_jobs(connection, field ="job_id", order="asc"):
-    #add filters to signature, add a check if filers is empty, if not, add WHERE and then build the conditions, else, skip to ORDER BY
-    cursor = connection.cursor()
-    col = str(field).lower().strip()
-    if col in string_to_value_map:
-        col = string_to_value_map.get(col)
-    else:
-        col = "job_id"  # Default to job_id if invalid input
-        print(f"Invalid field '{field}'. Defaulting to job_id.")
+def list_jobs(field="job_id", order="asc", filters=None):
+    with SessionLocal() as session:
+        query = session.query(Job)
+
+        # Filters (safe + normalized)
+        if filters:
+            for raw_k, raw_v in filters.items():
+                if raw_v in (None, "", " "):
+                    continue
+                key, val = normalize_filter(raw_k, raw_v)
+                if val in (None, "", " "):
+                    continue
+                if not hasattr(Job, key):
+                    print(f"Ignoring invalid filter field: {raw_k} -> {key}")
+                    continue
+
+                col = getattr(Job, key)
+
+                # For text-y columns, compare case-insensitively
+                if isinstance(val, str):
+                    query = query.filter(func.lower(col) == val.lower())
+                else:
+                    query = query.filter(col == val)
+
+        # Ordering
+        col_in = (field or "job_id").lower().strip()
+        col_name = string_to_value_map.get(col_in, "job_id")
+        if not hasattr(Job, col_name):
+            print(f"Invalid field '{field}', defaulting to job_id.")
+            col_name = "job_id"
+
+        direction = desc if (order or "asc").lower().strip() in ("desc","d","descending") else asc
+        query = query.order_by(direction(getattr(Job, col_name)))
+
+        try:
+            return query.all()
+        except Exception as e:
+            print(f"Error listing jobs: {e}")
+            return []
+
+
+def add_job(job_data):
+    # Normalize the input data
+    normalize(job_data)  
     
-    sort_ord =  str(order).lower().strip()
-    if sort_ord in ("desc","d","descending"):
-        sort_ord = "DESC"
-    elif sort_ord in ("asc","a","ascending"):
-        sort_ord = "ASC"
-    else:
-        sort_ord = "ASC"  # Default to ascending order if invalid input
-        print(f"Invalid order '{order}'. Defaulting to ascending order.")
-    
-    nullable_fields = f"({col} IS NULL) ASC, " if col in {"location_display", "next_action", "source_display"} else "" # Location,next_action and source can have null values, therefore require unique ordering
-    command = f"SELECT * FROM jobs ORDER BY {nullable_fields}{col} {sort_ord}, job_id ASC" # If field is a mandatory field, nullable_fields will be empty and have no effect
-    try:
-        cursor.execute(command)
-        jobs = cursor.fetchall()
-        return jobs
-    except sqlite3.Error as e:
-        print(f"Error listing jobs: {e}")
-    finally:
-        cursor.close()
-
-def insert_job(connection, job_data):
-    JOB_COLUMNS = (
-        "company_display", "title_display", "location_display", "source_display",
-        "company_key", "title_key", "location_key", "source_key",
-        "date_applied", "status", "referred",
-        "cv", "cover_letter", "application_url",
-        "next_action", "notes",
-    )
-    values = [job_data.get(col) for col in JOB_COLUMNS] #Chaining the fields in order of JOB_COLUMN
-    placeholders = ", ".join("?" for _ in JOB_COLUMNS) #Chaining ?, sqlite way of passing parameters
-    sql = f"INSERT INTO jobs ({', '.join(JOB_COLUMNS)}) VALUES ({placeholders})"
-    cursor = connection.cursor()
-    try:
-        cursor.execute(sql, values)
-        connection.commit()
-        return cursor.lastrowid
-    except sqlite3.Error as e:
-        print(f"Error inserting job: {e}")
+    # Check required fields
+    if not checklist(job_data):  
+        print("Invalid job data. Please check required fields.")
         return None
-    finally:
-        cursor.close()
+    # Insert the job into the database
+    return insert_job(job_data)  
+
+def insert_job(job_data):
+    with SessionLocal() as session:
+        # Unpack job_data dictionary into Job model
+        job = Job(**job_data)  
+        session.add(job)
+        
+        try:
+            session.commit()
+            session.refresh(job)
+            return job.job_id
+        
+        except Exception as e:
+            session.rollback()
+            print(f"Error inserting job: {e}")
+            return None
 
 
+def update_job(job_id, new_data):
+    with SessionLocal() as session:
+        # Retrive the existing entry we wish to update
+        to_update = session.get(Job, job_id) 
+        if not to_update:
+            print(f"Job entry with ID {job_id} not found")
+            return None
+        
+        # Normalize the input data
+        normalize(new_data)  
+        
+        # Updating the data in the object
+        ignored_fields = []
+        for key, value in new_data.items():
+            if hasattr(to_update, key): # Incase the update request contains a typo, prevents failing and just ignores it
+                setattr(to_update, key, value)
+            else:
+                print(f"No field of the name {key} found, Ignoring {key}") # Only needed now when working with bash commands, in the future, selecting fields to update from a list and not by user input
+                ignored_fields.append(key)
+        
+        final_data = {c.name: getattr(to_update, c.name) for c in Job.__table__.columns}
+        
+        # Check required fields
+        if not checklist(final_data):
+            print("Invalid job data. Please check required fields.")
+            session.rollback()
+            return None
+        
+        try:
+            session.commit()
+            session.refresh(to_update)
+            return {
+                "job_id": to_update.job_id,
+                "updated_fields": list(new_data.keys()),
+                "ignored_fields": ignored_fields,
+            }
+        except Exception as e:
+            session.rollback()
+            print(f"Error updating job: {e}")
+            return None
 
-
-def add_job(connection, job_data):
-    job_entry = dict(template)
-    job_entry.update(dict(job_data))
-    normalize(job_entry) #normalizing before checklist, can make valid inputs that would be rejected pass, and also for the other way around.
-    if(checklist(job_entry)):
-        return insert_job(connection, job_entry)
-    else:
-        print("Invalid job data. Please check the required fields.")
-        return None
-
-def update_job(connection,id_job,new_data):
-    job_update = dict(new_data)
-    normalize(job_update)  # Normalize the input data
-    REQUIRED = {"company_display", "title_display", "referred", "date_applied", "status"}
-    for field in REQUIRED:
-        if field in job_update and not job_update[field]:
-            print(f"Required field '{field}' is missing or empty.")
-    
-    cur = connection.cursor()
-    try:
-        set_clause = ", ".join(f"{col} = ?" for col in job_update if col in template)
-        sql = f"UPDATE jobs SET {set_clause} WHERE job_id = ? RETURNING *;"
-        values = [job_update[col] for col in job_update if col in template]
-        values.append(id_job)  # Append the job_id to the values for the WHERE clause
-        cur.execute(sql, values)
-        cur.fetchone()  # Fetch the updated row
-        connection.commit()
-        return cur.lastrowid  # Return the ID of the updated job
-    except sqlite3.Error as e:
-        print(f"Error updating job: {e}")
-        return None
-    finally:
-        cur.close()
+def delete_job(job_id): # Currently only deleted one entry each time, will consider adding an option for mass deletion
+    with SessionLocal() as session:
+        to_delete = session.get(Job, job_id)
+        if not to_delete:
+            print(f"No job with id {job_id} was found!")
+            return None
+        else:
+            try:
+                session.delete(to_delete)
+                session.commit()
+                return {"deleted_id": to_delete.job_id}
+            except Exception as e:
+                session.rollback()
+                print(f"Error deleting job: {e}")
+                return None
 
     

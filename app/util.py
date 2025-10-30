@@ -17,19 +17,6 @@ string_to_value_map = {
     "source": "source_key",
 }
 
-operators = {
-    "=" : "=",
-    "!=": "<>",
-    "<": "<",
-    ">": ">",
-    "<=": "<=",
-    ">=": ">=",
-    "like": "LIKE",
-    "in" :"IN",
-    "between": "BETWEEN",
-    "is": "IS",
-}
-
 template = MappingProxyType({
     # display fields (user input)
     "company_display": None,
@@ -53,6 +40,7 @@ template = MappingProxyType({
     "notes": None,
     "application_url": None,
 })
+
 STATUS_MAP = {
     # Normalizes different variations the user might type in to the allowed forms
     "applied": "Applied",
@@ -64,6 +52,8 @@ STATUS_MAP = {
     "offer accepted": "Offer_Accepted",
     "rejected": "Rejected",
 }
+
+ALLOWED_STATUS = {"Applied","Home_Assignment","Interview","Offer","Offer_Accepted","Rejected"}
 
 display_key = {
     "company_display": "company_key",
@@ -102,6 +92,42 @@ def normalize_date(value: str)->str | None:
     
     raise ValueError(f"Invalid date format: {value}")
 
+def normalize_filter(k: str, v):
+    """Normalize a single filter field/value pair."""
+    if v is None:
+        return k, None
+    if isinstance(v, str):
+        v = " ".join(v.strip().split())  # trim + collapse spaces
+
+    # map friendly keys to actual DB columns early
+    key = string_to_value_map.get(k.lower().strip(), k)
+
+    # per-field normalization rules
+    if key.endswith("_key"):
+        # keys are stored normalized/lowercased
+        if isinstance(v, str):
+            v = v.lower()
+    elif key == "status":
+        if isinstance(v, str):
+            v = v.strip()
+            # allow case-insensitive input; validate against allowed set
+            v = v[0].upper() + v[1:].lower() if v else v
+        if v not in ALLOWED_STATUS:
+            # invalid -> ignore this filter
+            return key, None
+    elif key == "referred":
+        # coerce to 0/1
+        if isinstance(v, str):
+            vv = v.strip().lower()
+            if vv in {"1","true","t","yes","y"}: v = 1
+            elif vv in {"0","false","f","no","n"}: v = 0
+            else: return key, None
+        else:
+            v = 1 if v else 0
+    # dates: accept YYYY-MM-DD strings as-is; you can add parsing if needed
+
+    return key, v
+
 def normalize(job_data):
     # DISPLAY
     for disp in ("company_display", "title_display", "location_display", "source_display"):
@@ -128,6 +154,15 @@ def normalize(job_data):
         if d in job_data and job_data.get(d) is not None:
             job_data[d] = normalize_date(job_data[d])
 
+def checklist(job_data):
+    required = ["company_display", "title_display", "status"]
+    for field in required:
+        if not job_data.get(field):
+            return False
+    if not job_data.get("date_applied"):
+        job_data["date_applied"] = date.today()
+    return True
+
 def print_jobs_system(rows):
     if not rows:
         print("No jobs found.")
@@ -140,21 +175,3 @@ def print_jobs_system(rows):
             if value is not None:
                 print(f"{key:15}: {value}")
         print("-" * 30)  # separator line
-
-def build_condition(field: str, op: str, values):
-    #filters is a list, where each entry is a list, (field, op, values), values can emptty (op == isnull), a single (op == >), or a list (op == in)
-    #the function accepts parameters that have been already mapped by string_to_value_map, and operators, The mapping has been done in the caller to this function
-    if field in {"date_applied", "next_action", "last_updated"}:
-        values = normalize_date(values[0])
-    
-    elif op == "IN":
-        values = "(" + ",".join(str(values)) + ")"
-    
-    elif op == "BETWEEN":
-        values = str(values[0]) + "AND" + str(values[1])
-    
-    else:
-        values = str(values[0])
-
-    return field + op + values 
-    
