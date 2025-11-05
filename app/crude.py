@@ -9,7 +9,7 @@ from app.util import *
 
 
 
-def list_jobs(field="job_id", order="asc", filters=None):
+def list_jobs(filters=None, order_by="job_id", descending=False):
     with SessionLocal() as session:
         query = session.query(Job)
 
@@ -33,15 +33,13 @@ def list_jobs(field="job_id", order="asc", filters=None):
                 else:
                     query = query.filter(col == val)
 
-        # Ordering
-        col_in = (field or "job_id").lower().strip()
-        col_name = string_to_value_map.get(col_in, "job_id")
-        if not hasattr(Job, col_name):
-            print(f"Invalid field '{field}', defaulting to job_id.")
-            col_name = "job_id"
+        # Sorting
+        if not hasattr(Job, order_by):
+            print(f"Invalid field '{order_by}', defaulting to job_id.")
+            order_by = "job_id"
 
-        direction = desc if (order or "asc").lower().strip() in ("desc","d","descending") else asc
-        query = query.order_by(direction(getattr(Job, col_name)))
+        col = getattr(Job, order_by)
+        query = query.order_by(desc(col) if descending else asc(col))
 
         try:
             return query.all()

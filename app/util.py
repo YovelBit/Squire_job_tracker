@@ -62,6 +62,13 @@ display_key = {
     "source_display": "source_key",
 }
 
+key_display ={
+    "company_key": "company_display",
+    "title_key": "title_display",
+    "location_key": "location_display",
+    "source_key": "source_display"
+}
+
 def _collapse_spaces(s: str) -> str:
     return " ".join(s.split())
 
@@ -77,23 +84,29 @@ def _norm_key(s: str) -> str:
     s = _collapse_spaces(str(s).strip())
     return s.lower() if s else None
 
-def normalize_date(value: str)->str | None:
+def normalize_date(value) -> str | None:
     if value is None:
         return None
-    value = value.strip()
+
+    # If it's already a datetime.date, just convert to string
+    if isinstance(value, date):
+        return value.strftime("%Y-%m-%d")
+
+    # If it's a string, clean and parse it
+    value = str(value).strip()
     if not value:
         return None
+
     for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%m/%d/%Y"):
         try:
             dt = datetime.strptime(value, fmt)
             return dt.strftime("%Y-%m-%d")
         except ValueError:
             continue
-    
+
     raise ValueError(f"Invalid date format: {value}")
 
 def normalize_filter(k: str, v):
-    """Normalize a single filter field/value pair."""
     if v is None:
         return k, None
     if isinstance(v, str):
@@ -140,7 +153,7 @@ def normalize(job_data):
     raw_status = job_data.get("status")
     if raw_status:
         key = _collapse_spaces(str(raw_status).strip().lower()).replace("-", "_")
-        job_data["status"] = STATUS_MAP.get(key, "Applied")
+        job_data["status"] = STATUS_MAP.get(key,None)
 
     # REFERRED TO 0/1
     if job_data.get("referred") is not None:

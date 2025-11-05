@@ -4,8 +4,9 @@ import os
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql+psycopg://squire:squire@localhost:5432/squire"
+    "postgresql+psycopg2://squire:squire@db:5432/squire"
 )
+
 
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)

@@ -91,3 +91,29 @@ Added print_jobs() with a clean, readable output format for listing job entries.
 - Verified data persistence and schema integrity directly in Postgres via DBeaver.
 
 - Cleaned up legacy files by removing the obsolete db/ folder from the repository (SQLite .sql files now preserved only in Git history).
+
+**Day 7** — ORM finalization, filtering logic, and Dockerized testing
+
+- Debugged and fixed final issues after the migration to PostgreSQL + SQLAlchemy + Alembic  + Docker.
+
+- Updated Alembic and SQLAlchemy connection URLs to use the Docker service hostname db instead of localhost.
+
+- Resolved import-path issues by standardizing all internal imports to the app.* structure.
+
+- Enabled interactive CLI support inside the Docker container (stdin_open, tty) for direct testing with docker-compose run --rm app.
+
+- Enhanced list_jobs() with:
+
+- Safe handling of empty or missing filters.
+
+- Case-insensitive text matching.
+
+- Automatic normalization of filter input values.
+
+- Robust error handling and ordering logic.
+
+- Verified complete CRUD functionality (add_job, update_job, delete_job, list_jobs) through the CLI.
+
+- Tested all operations end-to-end inside Docker and confirmed data persistence through DBeaver.
+
+- System now fully stable and ready for API layer development.
