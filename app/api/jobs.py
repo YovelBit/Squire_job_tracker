@@ -38,3 +38,4 @@ def filter_jobs(filters: JobFilter, order_by: str = "job_id", descending: bool =
     filter_dict = filters.model_dump(exclude_unset=True, exclude_none=True)
     jobs = list_jobs(filters=filter_dict, order_by=order_by, descending=descending)
     return jobs
+

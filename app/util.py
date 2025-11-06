@@ -6,6 +6,8 @@ string_to_value_map = {
     # Used only for ORDER BY in list_jobs() to prevent SQL injection,
     # since SQL parameters cannot be used for column names.
     "job_id": "job_id",
+    "user_id": "user_id",
+    "public_id": "public_id",
     "company": "company_key",
     "title": "title_key",
     "date_applied": "date_applied",

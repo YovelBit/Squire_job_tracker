@@ -9,34 +9,39 @@ from app.util import *
 
 
 
-def list_jobs(filters=None, order_by="job_id", descending=False):
+def list_jobs(user_id: int, filters: dict | None = None, order_by: str = "public_id", descending: bool = True)-> list[Job]:
+    # --- Preprocessing: safe to do outside the DB session ---
+    normalized_filters = []
+    if filters:
+        for raw_k, raw_v in filters.items():
+            if raw_v in (None, "", " "):
+                continue
+
+            key, val = normalize_filter(raw_k, raw_v)
+            if val in (None, "", " "):
+                continue
+            normalized_filters.append((key, val))
+
+    # --- DB work: must happen inside the session ---
     with SessionLocal() as session:
-        query = session.query(Job)
+        query = session.query(Job).filter(Job.user_id == user_id)
 
-        # Filters (safe + normalized)
-        if filters:
-            for raw_k, raw_v in filters.items():
-                if raw_v in (None, "", " "):
-                    continue
-                key, val = normalize_filter(raw_k, raw_v)
-                if val in (None, "", " "):
-                    continue
-                if not hasattr(Job, key):
-                    print(f"Ignoring invalid filter field: {raw_k} -> {key}")
-                    continue
+        # Apply filters
+        for key, val in normalized_filters:
+            if not hasattr(Job, key):
+                print(f"Ignoring invalid filter field: {key}")
+                continue
 
-                col = getattr(Job, key)
+            col = getattr(Job, key)
+            if isinstance(val, str): # Case-insensitive match for strings
+                query = query.filter(func.lower(col) == val.lower())
+            else:
+                query = query.filter(col == val)
 
-                # For text-y columns, compare case-insensitively
-                if isinstance(val, str):
-                    query = query.filter(func.lower(col) == val.lower())
-                else:
-                    query = query.filter(col == val)
-
-        # Sorting
+        # Apply ordering
         if not hasattr(Job, order_by):
-            print(f"Invalid field '{order_by}', defaulting to job_id.")
-            order_by = "job_id"
+            print(f"Invalid order_by '{order_by}', defaulting to public_id.")
+            order_by = "public_id" # Default safe column
 
         col = getattr(Job, order_by)
         query = query.order_by(desc(col) if descending else asc(col))
@@ -45,10 +50,10 @@ def list_jobs(filters=None, order_by="job_id", descending=False):
             return query.all()
         except Exception as e:
             print(f"Error listing jobs: {e}")
-            return []
+        return []
 
-
-def add_job(job_data):
+        
+def add_job(job_data: dict)-> Job | None:
     # Normalize the input data
     normalize(job_data)  
     
@@ -59,7 +64,7 @@ def add_job(job_data):
     # Insert the job into the database
     return insert_job(job_data)  
 
-def insert_job(job_data):
+def insert_job(job_data: dict) -> Job | None:
     with SessionLocal() as session:
         # Unpack job_data dictionary into Job model
         job = Job(**job_data)  
@@ -68,7 +73,7 @@ def insert_job(job_data):
         try:
             session.commit()
             session.refresh(job)
-            return job.job_id
+            return job
         
         except Exception as e:
             session.rollback()
