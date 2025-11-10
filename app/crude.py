@@ -4,10 +4,11 @@ from app.db import SessionLocal
 from app.models import Job
 import datetime
 from pathlib import Path
-from app.util import *
+from app import util
+import uuid
 
 
-
+IMMUTABLE_FIELDS = {"job_id", "public_id", "user_id", "created_at", "last_updated"}
 
 def list_jobs(user_id: int, filters: dict | None = None, order_by: str = "public_id", descending: bool = True)-> list[Job]:
     # --- Preprocessing: safe to do outside the DB session ---
@@ -17,7 +18,7 @@ def list_jobs(user_id: int, filters: dict | None = None, order_by: str = "public
             if raw_v in (None, "", " "):
                 continue
 
-            key, val = normalize_filter(raw_k, raw_v)
+            key, val = util.normalize_filter(raw_k, raw_v)
             if val in (None, "", " "):
                 continue
             normalized_filters.append((key, val))
@@ -55,10 +56,10 @@ def list_jobs(user_id: int, filters: dict | None = None, order_by: str = "public
         
 def add_job(job_data: dict)-> Job | None:
     # Normalize the input data
-    normalize(job_data)  
+    util.normalize(job_data)  
     
     # Check required fields
-    if not checklist(job_data):  
+    if not util.checklist(job_data):  
         print("Invalid job data. Please check required fields.")
         return None
     # Insert the job into the database
@@ -81,40 +82,55 @@ def insert_job(job_data: dict) -> Job | None:
             return None
 
 
-def update_job(job_id, new_data):
+def update_job(public_id: uuid.UUID, new_data: dict, user_id: int) -> dict | None:
+    if not new_data:
+        print("No data provided for update.")
+        return None
+    
     with SessionLocal() as session:
         # Retrive the existing entry we wish to update
-        to_update = session.get(Job, job_id) 
-        if not to_update:
-            print(f"Job entry with ID {job_id} not found")
+        job = session.query(Job).filter(
+            Job.public_id == public_id,
+            Job.user_id == user_id
+        ).first()
+        
+        if not job:
+            print(f"No job with public_id {public_id} found for user_id {user_id}.")
             return None
         
-        # Normalize the input data
-        normalize(new_data)  
+        # Filter out immutable fields
+        mutable_updates = {k: v for k, v in new_data.items() if k not in IMMUTABLE_FIELDS}
+
+        # Normalize only the mutable fields
+        if mutable_updates:
+            util.normalize(mutable_updates) 
         
         # Updating the data in the object
-        ignored_fields = []
-        for key, value in new_data.items():
-            if hasattr(to_update, key): # Incase the update request contains a typo, prevents failing and just ignores it
-                setattr(to_update, key, value)
-            else:
-                print(f"No field of the name {key} found, Ignoring {key}") # Only needed now when working with bash commands, in the future, selecting fields to update from a list and not by user input
-                ignored_fields.append(key)
+        ignored_fields = [k for k in new_data.keys() if k not in mutable_updates or not hasattr(job, k)]
+
+        # Apply updates to the job object
+        for key, value in mutable_updates.items():
+            if hasattr(job, key):
+                setattr(job, key, value)
+
+        # Auto-update the last_updated timestamp
+        job.last_updated = datetime.datetime.utcnow()
         
-        final_data = {c.name: getattr(to_update, c.name) for c in Job.__table__.columns}
+        final_data = {c.name: getattr(job, c.name) for c in Job.__table__.columns}
         
         # Check required fields
-        if not checklist(final_data):
+        if not util.checklist(final_data):
             print("Invalid job data. Please check required fields.")
             session.rollback()
             return None
         
         try:
             session.commit()
-            session.refresh(to_update)
+            session.refresh(job)
             return {
-                "job_id": to_update.job_id,
-                "updated_fields": list(new_data.keys()),
+                "public_id": str(job.public_id),
+                "updated_fields": list(mutable_updates.keys()),
+                "new_values": mutable_updates,
                 "ignored_fields": ignored_fields,
             }
         except Exception as e:
@@ -122,20 +138,35 @@ def update_job(job_id, new_data):
             print(f"Error updating job: {e}")
             return None
 
-def delete_job(job_id): # Currently only deleted one entry each time, will consider adding an option for mass deletion
+def delete_job(public_id: uuid.UUID, user_id: int)-> dict | None: # Currently only deleted one entry each time, will consider adding an option for mass deletion
     with SessionLocal() as session:
-        to_delete = session.get(Job, job_id)
+        to_delete = session.query(Job).filter(
+            Job.public_id == public_id,
+            Job.user_id == user_id
+        ).first()
         if not to_delete:
-            print(f"No job with id {job_id} was found!")
+            print(f"No job with id {public_id} was found!")
             return None
-        else:
-            try:
-                session.delete(to_delete)
-                session.commit()
-                return {"deleted_id": to_delete.job_id}
-            except Exception as e:
-                session.rollback()
-                print(f"Error deleting job: {e}")
-                return None
+        
+        # Serialize the deleted entry before deletion
+        deleted_entry = {
+            c.name: getattr(to_delete, c.name)
+            if c.name != "public_id"
+            else str(getattr(to_delete, c.name))
+            for c in Job.__table__.columns
+        }
+        
+        
+
+        try:
+            session.delete(to_delete)
+            session.commit()
+            deleted_entry.pop("job_id", None)
+            deleted_entry.pop("user_id", None)
+            return {"deleted_job": deleted_entry}
+        except Exception as e:
+            session.rollback()
+            print(f"Error deleting job: {e}")
+            return None
 
     

@@ -1,9 +1,12 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
+import uuid
+from typing import List, Dict, Any
 
-
-# Shared base schema for all job models
+# --------------------------------------------------
+# Base schema: shared editable fields for jobs
+# --------------------------------------------------
 class JobBase(BaseModel):
     company_display: Optional[str] = None
     title_display: Optional[str] = None
@@ -16,25 +19,63 @@ class JobBase(BaseModel):
     notes: Optional[str] = None
 
 
-# Schema for creating a new job (required core fields)
+# --------------------------------------------------
+# Schema for creating a new job (client input)
+# --------------------------------------------------
 class JobCreate(JobBase):
     company_display: str
     title_display: str
     status: str
 
 
-# Schema for updating an existing job (all fields optional)
+# --------------------------------------------------
+# Schema for updating an existing job (client input)
+# --------------------------------------------------
 class JobUpdate(JobBase):
-    pass  # all optional inherited from JobBase
+    """All fields optional for partial updates"""
+    pass
 
 
-# Schema for returning job data from the API
+# --------------------------------------------------
+# Schema for returning job data (server → client)
+# --------------------------------------------------
 class JobResponse(JobBase):
     job_id: int
+    public_id: uuid.UUID
+    created_at: datetime = Field(..., description="Timestamp when the job was created", readOnly=True)
+    last_updated: datetime = Field(..., description="Timestamp of the last update", readOnly=True)
 
     class Config:
         from_attributes = True  # replaces orm_mode in Pydantic v2
 
-# Schema for filtering jobs and returning them
+# --------------------------------------------------
+# Schema for update job result (server → client)
+# --------------------------------------------------
+
+class JobUpdateResult(BaseModel):
+    public_id: uuid.UUID
+    updated_fields: List[str]
+    new_values: Dict[str, Any]
+    ignored_fields: List[str]
+
+# --------------------------------------------------
+# Schema for filtering jobs (client input)
+# --------------------------------------------------
 class JobFilter(JobBase):
-    pass  
+    """Used to filter job listings."""
+    pass
+
+# --------------------------------------------------
+# Schema for user creation
+# --------------------------------------------------
+
+class UserCreate(BaseModel):
+    email: EmailStr
+    password: str
+
+# --------------------------------------------------
+# Schema for token response
+# --------------------------------------------------
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
