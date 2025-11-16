@@ -2,7 +2,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import asc, desc, func
 from app.db import SessionLocal
 from app.models import Job
-import datetime
+from datetime import timezone, datetime
 from pathlib import Path
 from app import util
 import uuid
@@ -114,7 +114,7 @@ def update_job(public_id: uuid.UUID, new_data: dict, user_id: int) -> dict | Non
                 setattr(job, key, value)
 
         # Auto-update the last_updated timestamp
-        job.last_updated = datetime.datetime.utcnow()
+        job.last_updated = datetime.now(timezone.utc)
         
         final_data = {c.name: getattr(job, c.name) for c in Job.__table__.columns}
         

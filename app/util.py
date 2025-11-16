@@ -1,6 +1,6 @@
 from types import MappingProxyType
-from datetime import date, datetime
-
+from datetime import date, datetime, timezone
+from typing import List, Dict, Any
 string_to_value_map = { 
     # Whitelist mapping of allowed sort field names to actual DB columns.
     # Used only for ORDER BY in list_jobs() to prevent SQL injection,
@@ -108,7 +108,7 @@ def normalize_date(value) -> str | None:
 
     raise ValueError(f"Invalid date format: {value}")
 
-def normalize_filter(k: str, v):
+def normalize_filter(k: str, v: Any) -> tuple[str, Any]:
     if v is None:
         return k, None
     if isinstance(v, str):
@@ -143,7 +143,7 @@ def normalize_filter(k: str, v):
 
     return key, v
 
-def normalize(job_data):
+def normalize(job_data: Dict[str, Any]) -> None:
     # DISPLAY
     for disp in ("company_display", "title_display", "location_display", "source_display"):
         if disp in job_data:
@@ -169,7 +169,7 @@ def normalize(job_data):
         if d in job_data and job_data.get(d) is not None:
             job_data[d] = normalize_date(job_data[d])
 
-def checklist(job_data):
+def checklist(job_data: Dict[str, Any]) -> bool:
     required = ["company_display", "title_display", "status"]
     for field in required:
         if not job_data.get(field):
@@ -178,7 +178,7 @@ def checklist(job_data):
         job_data["date_applied"] = date.today()
     return True
 
-def print_jobs_system(rows):
+def print_jobs_system(rows: List[Dict[str, Any]]) -> None:
     if not rows:
         print("No jobs found.")
         return

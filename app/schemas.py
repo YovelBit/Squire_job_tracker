@@ -17,6 +17,7 @@ class JobBase(BaseModel):
     date_applied: Optional[date] = None
     next_action: Optional[date] = None
     notes: Optional[str] = None
+    application_url: Optional[str] = None
 
 
 # --------------------------------------------------
@@ -70,6 +71,13 @@ class JobFilter(JobBase):
 # --------------------------------------------------
 
 class UserCreate(BaseModel):
+    email: EmailStr
+    password: str
+
+# --------------------------------------------------
+# Schema for user login
+# --------------------------------------------------
+class UserLogin(BaseModel):
     email: EmailStr
     password: str
 

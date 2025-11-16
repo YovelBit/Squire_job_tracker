@@ -117,3 +117,31 @@ Added print_jobs() with a clean, readable output format for listing job entries.
 - Tested all operations end-to-end inside Docker and confirmed data persistence through DBeaver.
 
 - System now fully stable and ready for API layer development.
+
+**Day 8** – User authentication system & multi-user architecture
+
+- CRUD overhaul:
+    Updated update_job() and delete_job() to use public_id (UUID) and user_id, ensuring each user can access only their own records.
+
+- API improvements:
+    jobs.py now references public_id and injects a placeholder current_user, preparing for full JWT authentication.
+
+- Schemas cleanup:
+    Refactored schemas.py for clarity; added public_id visibility in job responses for API interaction.
+
+- Introduced /core folder:
+
+    config.py – centralizes configuration and environment constants.
+
+    dependencies.py – manages DB sessions and user retrieval.
+
+    security.py – handles password hashing, JWT creation, and token decoding.
+
+- User routes:
+    Added /users/register and /users/login endpoints in app/api/users.py.
+
+- App structure:
+    main.py now wires both user and job routers into a single FastAPI app.
+
+- Authentication:
+    Implemented user registration, login, hashed password storage, and JWT-based authentication; get_current_user now extracts the user ID from the verified token.
