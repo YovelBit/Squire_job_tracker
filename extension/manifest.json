@@ -5,6 +5,9 @@
   "description": "Quickly log job applications from the current tab into your Squire backend.",
   "permissions": ["tabs", "storage"],
   "host_permissions": ["<all_urls>"],
+    "background": {
+    "service_worker": "background.js"
+  },
   "action": {
     "default_title": "Add job to Squire",
     "default_popup": "popup.html"
