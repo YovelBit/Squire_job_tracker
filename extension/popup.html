@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Squire Quick Add</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        width: 300px;
+        padding: 10px;
+      }
+      label {
+        font-size: 12px;
+        margin-top: 8px;
+        display: block;
+      }
+      input,
+      select,
+      button {
+        width: 100%;
+        padding: 5px;
+        margin-top: 3px;
+        box-sizing: border-box;
+      }
+      #status-message,
+      #settings-message {
+        font-size: 12px;
+        margin-top: 4px;
+        min-height: 14px;
+      }
+      .success {
+        color: green;
+      }
+      .error {
+        color: red;
+      }
+      hr {
+        margin: 12px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Add Job</h2>
+
+    <form id="job-form">
+      <label>
+        Job Title:
+        <input type="text" id="title_display" required />
+      </label>
+
+      <label>
+        Company:
+        <input type="text" id="company_display" required />
+      </label>
+
+      <label>
+        Status:
+        <select id="status">
+          <option value="Applied" selected>Applied</option>
+          <option value="Home_Assignment">Home Assignment</option>
+          <option value="Interview">Interview</option>
+          <option value="Offer">Offer</option>
+          <option value="Offer_Accepted">Offer Accepted</option>
+          <option value="Rejected">Rejected</option>
+        </select>
+      </label>
+
+      <label>
+        URL:
+        <input type="text" id="application_url" readonly />
+      </label>
+
+      <label>
+        Source:
+        <input type="text" id="source_display" readonly />
+      </label>
+
+      <button type="submit">Save to Squire</button>
+      <div id="status-message"></div>
+    </form>
+
+    <hr />
+
+    <h2>Settings</h2>
+
+    <form id="settings-form">
+      <label>
+        API Base URL:
+        <input
+          type="text"
+          id="api_base_url"
+          placeholder="http://localhost:8000"
+          required
+        />
+      </label>
+
+      <label>
+        Email:
+        <input type="email" id="email" required />
+      </label>
+
+      <label>
+        Password:
+        <input type="password" id="password" required />
+      </label>
+
+      <button type="submit">Save Settings</button>
+      <div id="settings-message"></div>
+    </form>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

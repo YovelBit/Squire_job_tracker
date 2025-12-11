@@ -8,7 +8,7 @@ __pycache__/
 .venv/
 
 # Environment variables
-.env
+.env.local
 
 # SQLite DB (for dev only)
 *.db
