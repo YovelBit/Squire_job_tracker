@@ -6,9 +6,10 @@ interface Props {
   onChange: (filters: JobFilter) => void;
   onSearch: (term: string) => void;
   searchTerm: string;
+  onClearFilters: () => void;
 }
 
-const FilterBar = ({ filters, onChange, searchTerm, onSearch }: Props) => {
+const FilterBar = ({ filters, onChange, searchTerm, onSearch, onClearFilters }: Props) => {
   const handleInput = (
     event: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
     key: keyof JobFilter
@@ -16,7 +17,23 @@ const FilterBar = ({ filters, onChange, searchTerm, onSearch }: Props) => {
     const value = event.target.type === 'checkbox'
       ? (event.target as HTMLInputElement).checked
       : event.target.value;
-    onChange({ ...filters, [key]: value === '' ? undefined : value });
+    
+    // Remove filter field if empty/unchecked, otherwise set it
+    if (event.target.type === 'checkbox') {
+      const newFilters = { ...filters };
+      if (value) {
+        newFilters[key] = true as any;
+      } else {
+        delete newFilters[key];
+      }
+      onChange(newFilters);
+    } else if (value === '' || value === null) {
+      const newFilters = { ...filters };
+      delete newFilters[key];
+      onChange(newFilters);
+    } else {
+      onChange({ ...filters, [key]: value });
+    }
   };
 
   return (
@@ -38,52 +55,54 @@ const FilterBar = ({ filters, onChange, searchTerm, onSearch }: Props) => {
             <span className="muted">Referred</span>
           </label>
         </div>
+        <button
+          type="button"
+          className="btn secondary"
+          onClick={onClearFilters}
+          style={{ marginLeft: 'auto' }}
+        >
+          Clear Filters
+        </button>
       </div>
       <div className="form-grid">
         <input
           placeholder="Company"
-          value={filters.company ?? ''}
-          onChange={(e) => handleInput(e, 'company')}
+          value={filters.company_display ?? ''}
+          onChange={(e) => handleInput(e, 'company_display')}
         />
         <input
           placeholder="Location"
-          value={filters.location ?? ''}
-          onChange={(e) => handleInput(e, 'location')}
+          value={filters.location_display ?? ''}
+          onChange={(e) => handleInput(e, 'location_display')}
         />
         <input
           placeholder="Source (e.g. LinkedIn)"
-          value={filters.source ?? ''}
-          onChange={(e) => handleInput(e, 'source')}
+          value={filters.source_display ?? ''}
+          onChange={(e) => handleInput(e, 'source_display')}
         />
         <select value={filters.status ?? ''} onChange={(e) => handleInput(e, 'status')}>
           <option value="">Any status</option>
-          <option value="open">Open</option>
-          <option value="interviewing">Interviewing</option>
-          <option value="offer">Offer</option>
-          <option value="rejected">Rejected</option>
+          <option value="Applied">Applied</option>
+          <option value="Home_Assignment">Home Assignment</option>
+          <option value="Interview">Interview</option>
+          <option value="Offer">Offer</option>
+          <option value="Offer_Accepted">Offer Accepted</option>
+          <option value="Rejected">Rejected</option>
         </select>
         <label className="stack" style={{ alignItems: 'center' }}>
           <span className="muted" style={{ minWidth: 90 }}>Applied</span>
           <input
             type="date"
-            value={filters.applied_date ?? ''}
-            onChange={(e) => handleInput(e, 'applied_date')}
+            value={filters.date_applied ?? ''}
+            onChange={(e) => handleInput(e, 'date_applied')}
           />
         </label>
         <label className="stack" style={{ alignItems: 'center' }}>
-          <span className="muted" style={{ minWidth: 90 }}>Interview</span>
+          <span className="muted" style={{ minWidth: 90 }}>Next action</span>
           <input
             type="date"
-            value={filters.interview_date ?? ''}
-            onChange={(e) => handleInput(e, 'interview_date')}
-          />
-        </label>
-        <label className="stack" style={{ alignItems: 'center' }}>
-          <span className="muted" style={{ minWidth: 90 }}>Decision</span>
-          <input
-            type="date"
-            value={filters.decision_date ?? ''}
-            onChange={(e) => handleInput(e, 'decision_date')}
+            value={filters.next_action ?? ''}
+            onChange={(e) => handleInput(e, 'next_action')}
           />
         </label>
       </div>

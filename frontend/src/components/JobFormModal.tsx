@@ -9,15 +9,14 @@ interface Props {
 }
 
 const defaultJob: JobCreate = {
-  company: '',
-  title: '',
-  status: 'open',
-  location: '',
-  source: '',
+  company_display: '',
+  title_display: '',
+  status: 'Applied',
+  location_display: '',
+  source_display: '',
   referred: false,
-  applied_date: '',
-  interview_date: '',
-  decision_date: '',
+  date_applied: '',
+  next_action: '',
   notes: '',
   application_url: ''
 };
@@ -66,35 +65,37 @@ const JobFormModal = ({ open, onClose, onSubmit, initialData }: Props) => {
           <div className="modal-body">
             <div className="form-grid">
               <input
-                name="company"
+                name="company_display"
                 placeholder="Company"
-                value={form.company}
+                value={form.company_display}
                 onChange={handleChange}
                 required
               />
               <input
-                name="title"
+                name="title_display"
                 placeholder="Role title"
-                value={form.title}
+                value={form.title_display}
                 onChange={handleChange}
                 required
               />
               <select name="status" value={form.status} onChange={handleChange}>
-                <option value="open">Open</option>
-                <option value="interviewing">Interviewing</option>
-                <option value="offer">Offer</option>
-                <option value="rejected">Rejected</option>
+                <option value="Applied">Applied</option>
+                <option value="Home_Assignment">Home Assignment</option>
+                <option value="Interview">Interview</option>
+                <option value="Offer">Offer</option>
+                <option value="Offer_Accepted">Offer Accepted</option>
+                <option value="Rejected">Rejected</option>
               </select>
               <input
-                name="location"
+                name="location_display"
                 placeholder="Location"
-                value={form.location ?? ''}
+                value={form.location_display ?? ''}
                 onChange={handleChange}
               />
               <input
-                name="source"
+                name="source_display"
                 placeholder="Source"
-                value={form.source ?? ''}
+                value={form.source_display ?? ''}
                 onChange={handleChange}
               />
               <label className="chip-input" style={{ marginTop: 6 }}>
@@ -108,23 +109,14 @@ const JobFormModal = ({ open, onClose, onSubmit, initialData }: Props) => {
               </label>
               <label className="stack" style={{ alignItems: 'center' }}>
                 <span className="muted" style={{ minWidth: 100 }}>Applied date</span>
-                <input type="date" name="applied_date" value={form.applied_date ?? ''} onChange={handleChange} />
+                <input type="date" name="date_applied" value={form.date_applied ?? ''} onChange={handleChange} />
               </label>
               <label className="stack" style={{ alignItems: 'center' }}>
-                <span className="muted" style={{ minWidth: 100 }}>Interview</span>
+                <span className="muted" style={{ minWidth: 100 }}>Next action</span>
                 <input
                   type="date"
-                  name="interview_date"
-                  value={form.interview_date ?? ''}
-                  onChange={handleChange}
-                />
-              </label>
-              <label className="stack" style={{ alignItems: 'center' }}>
-                <span className="muted" style={{ minWidth: 100 }}>Decision</span>
-                <input
-                  type="date"
-                  name="decision_date"
-                  value={form.decision_date ?? ''}
+                  name="next_action"
+                  value={form.next_action ?? ''}
                   onChange={handleChange}
                 />
               </label>

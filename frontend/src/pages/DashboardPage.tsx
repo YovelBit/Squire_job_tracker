@@ -9,7 +9,7 @@ import { Job, JobCreate, JobFilter, JobUpdate, createJob, deleteJob, filterJobs,
 const DashboardPage = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [filters, setFilters] = useState<JobFilter>({});
-  const [orderBy, setOrderBy] = useState<keyof Job | undefined>('applied_date');
+  const [orderBy, setOrderBy] = useState<keyof Job | undefined>('date_applied');
   const [descending, setDescending] = useState<boolean>(true);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -38,6 +38,11 @@ const DashboardPage = () => {
     setFilters(updated);
   };
 
+  const handleClearFilters = () => {
+    setFilters({});
+    setSearchTerm('');
+  };
+
   useEffect(() => {
     const handler = setTimeout(() => {
       fetchJobs();
@@ -50,7 +55,7 @@ const DashboardPage = () => {
     if (!searchTerm) return jobs;
     const lower = searchTerm.toLowerCase();
     return jobs.filter(
-      (job) => job.company.toLowerCase().includes(lower) || job.title.toLowerCase().includes(lower)
+      (job) => job.company_display.toLowerCase().includes(lower) || job.title_display.toLowerCase().includes(lower)
     );
   }, [jobs, searchTerm]);
 
@@ -109,6 +114,7 @@ const DashboardPage = () => {
         onChange={handleFilterChange}
         searchTerm={searchTerm}
         onSearch={setSearchTerm}
+        onClearFilters={handleClearFilters}
       />
 
       <div className="stack" style={{ justifyContent: 'space-between', marginBottom: 12 }}>

@@ -11,14 +11,13 @@ interface Props {
 
 const JobTable = ({ jobs, onEdit, onDelete, orderBy, descending, onSortChange }: Props) => {
   const headers: { key: keyof Job; label: string }[] = [
-    { key: 'company', label: 'Company' },
-    { key: 'title', label: 'Title' },
+    { key: 'company_display', label: 'Company' },
+    { key: 'title_display', label: 'Title' },
     { key: 'status', label: 'Status' },
-    { key: 'location', label: 'Location' },
-    { key: 'source', label: 'Source' },
-    { key: 'applied_date', label: 'Applied' },
-    { key: 'interview_date', label: 'Interview' },
-    { key: 'decision_date', label: 'Decision' }
+    { key: 'location_display', label: 'Location' },
+    { key: 'source_display', label: 'Source' },
+    { key: 'date_applied', label: 'Applied' },
+    { key: 'next_action', label: 'Next Action' }
   ];
 
   const renderStatusBadge = (status: string) => {
@@ -50,14 +49,13 @@ const JobTable = ({ jobs, onEdit, onDelete, orderBy, descending, onSortChange }:
         <tbody>
           {jobs.map((job) => (
             <tr key={job.public_id}>
-              <td>{job.company}</td>
-              <td>{job.title}</td>
+              <td>{job.company_display}</td>
+              <td>{job.title_display}</td>
               <td>{renderStatusBadge(job.status)}</td>
-              <td>{job.location ?? '—'}</td>
-              <td>{job.source ?? '—'}</td>
-              <td>{job.applied_date ?? '—'}</td>
-              <td>{job.interview_date ?? '—'}</td>
-              <td>{job.decision_date ?? '—'}</td>
+              <td>{job.location_display ?? '—'}</td>
+              <td>{job.source_display ?? '—'}</td>
+              <td>{job.date_applied ?? '—'}</td>
+              <td>{job.next_action ?? '—'}</td>
               <td>
                 <div className="stack">
                   <button className="btn secondary" onClick={() => onEdit(job)}>
@@ -72,7 +70,7 @@ const JobTable = ({ jobs, onEdit, onDelete, orderBy, descending, onSortChange }:
           ))}
           {jobs.length === 0 && (
             <tr>
-              <td colSpan={9} style={{ textAlign: 'center', padding: 18 }}>
+              <td colSpan={8} style={{ textAlign: 'center', padding: 18 }}>
                 No jobs found with the current filters
               </td>
             </tr>

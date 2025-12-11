@@ -22,7 +22,11 @@ def register_user(payload: UserCreate, db=Depends(get_db)):
 @router.post("/login", response_model=TokenResponse)
 def login_user(payload: UserLogin, db=Depends(get_db)):
     user = db.query(User).filter(User.email == payload.email).first()
-    print("DEBUG login:", payload.password, user.hashed_password)
+    print(
+        "DEBUG login:",
+        "email:", payload.email,
+        "user_found:", bool(user),
+    )
     if not user or not verify_password(payload.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 

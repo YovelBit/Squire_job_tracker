@@ -125,8 +125,15 @@ def normalize_filter(k: str, v: Any) -> tuple[str, Any]:
     elif key == "status":
         if isinstance(v, str):
             v = v.strip()
-            # allow case-insensitive input; validate against allowed set
-            v = v[0].upper() + v[1:].lower() if v else v
+            # Normalize status: convert to lowercase, replace spaces/hyphens with underscores
+            # then check STATUS_MAP
+            normalized_key = v.lower().replace("-", "_").replace(" ", "_")
+            if normalized_key in STATUS_MAP:
+                v = STATUS_MAP[normalized_key]
+            else:
+                # If not in STATUS_MAP, capitalize first letter of each word (split by underscore)
+                parts = normalized_key.split("_")
+                v = "_".join(part.capitalize() if part else "" for part in parts)
         if v not in ALLOWED_STATUS:
             # invalid -> ignore this filter
             return key, None

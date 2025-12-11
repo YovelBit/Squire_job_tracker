@@ -1,9 +1,8 @@
-
-
 services:
   db:
     image: postgres:16
     container_name: squire-db
+    # you don't actually need env_file here unless you really want it
     environment:
       POSTGRES_USER: squire
       POSTGRES_PASSWORD: squire
@@ -24,8 +23,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    environment:
-      DATABASE_URL: postgresql+psycopg2://squire:squire@db:5432/squire
+    env_file:
+      - .env.local      # <- for JWT, DATABASE_URL, etc.
     volumes:
       - .:/usr/src/app
     working_dir: /usr/src/app
