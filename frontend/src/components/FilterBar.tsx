@@ -22,9 +22,9 @@ const FilterBar = ({ filters, onChange, searchTerm, onSearch, onClearFilters }: 
     if (event.target.type === 'checkbox') {
       const newFilters = { ...filters };
       if (value) {
-        newFilters[key] = true as any;
+        newFilters.referred = true;
       } else {
-        delete newFilters[key];
+        delete newFilters.referred;
       }
       onChange(newFilters);
     } else if (value === '' || value === null) {
