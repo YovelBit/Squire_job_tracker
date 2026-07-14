@@ -1,6 +1,7 @@
 import tsParser from "@typescript-eslint/parser";
 import tsPlugin from "@typescript-eslint/eslint-plugin";
-import globals from "globals"; // Run 'npm install globals' if not installed
+import reactHooks from "eslint-plugin-react-hooks";
+import globals from "globals";
 
 export default [
   {
@@ -12,24 +13,23 @@ export default [
         sourceType: "module",
         ecmaFeatures: { jsx: true }
       },
-      // 1. Tell ESLint browser globals (window, document, etc.) exist
       globals: {
         ...globals.browser,
         ...globals.es2020
       }
     },
     plugins: {
-      "@typescript-eslint": tsPlugin
+      "@typescript-eslint": tsPlugin,
+      "react-hooks": reactHooks
     },
     rules: {
-      // 2. Let TypeScript handle undefs, disable the ESLint check
       "no-undef": "off",
-      
-      // 3. Make 'any' a warning rather than a build-blocking error
       "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-empty-object-type": "off",
       
-      // 4. Allow empty interfaces
-      "@typescript-eslint/no-empty-object-type": "off"
+      // Tell ESLint where to look for these rules
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "warn"
     }
   }
 ];
