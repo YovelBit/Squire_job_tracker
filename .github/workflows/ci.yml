@@ -44,7 +44,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4 #install node.js on the runner
         with:
-          node-version: "20"
+          node-version: "24"
           cache: "npm"
           cache-dependency-path: frontend/package-lock.json #caches packages needed, so we wont re download all of them each time
 

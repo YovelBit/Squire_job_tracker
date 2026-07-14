@@ -1,6 +1,6 @@
 from types import MappingProxyType
-from datetime import date, datetime, timezone
-from typing import List, Dict, Any
+from datetime import date, datetime
+from typing import Dict, Any
 string_to_value_map = { 
     # Whitelist mapping of allowed sort field names to actual DB columns.
     # Used only for ORDER BY in list_jobs() to prevent SQL injection,
@@ -141,9 +141,12 @@ def normalize_filter(k: str, v: Any) -> tuple[str, Any]:
         # coerce to 0/1
         if isinstance(v, str):
             vv = v.strip().lower()
-            if vv in {"1","true","t","yes","y"}: v = 1
-            elif vv in {"0","false","f","no","n"}: v = 0
-            else: return key, None
+            if vv in {"1","true","t","yes","y"}: 
+                v = 1
+            elif vv in {"0","false","f","no","n"}: 
+                v = 0
+            else: 
+                return key, None
         else:
             v = 1 if v else 0
     # dates: accept YYYY-MM-DD strings as-is; you can add parsing if needed

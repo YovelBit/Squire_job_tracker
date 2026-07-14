@@ -1,18 +1,10 @@
 from fastapi import APIRouter, HTTPException, Depends
 from app.crude import add_job, list_jobs, update_job, delete_job
 from app.schemas import JobCreate, JobResponse, JobUpdate, JobFilter, JobUpdateResult
-from app.models import Job
-from app.db import SessionLocal
 import uuid
-from pydantic import BaseModel
 from app.core.dependencies import get_current_user, CurrentUser
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
-
-# --- Dependency to get current user ---
-def get_jobs(current_user: CurrentUser = Depends(get_current_user)):
-    return list_jobs(user_id=current_user.user_id)
-
 
 # --- Routes ---
 
