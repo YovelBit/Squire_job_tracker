@@ -184,16 +184,3 @@ def checklist(job_data: Dict[str, Any]) -> bool:
     if not job_data.get("date_applied"):
         job_data["date_applied"] = date.today()
     return True
-
-def print_jobs_system(rows: List[Dict[str, Any]]) -> None:
-    if not rows:
-        print("No jobs found.")
-        return
-
-    for idx, row in enumerate(rows, start=1):
-        print(f"\n=== Job #{idx} ===")
-        for key in row.keys():
-            value = row[key]
-            if value is not None:
-                print(f"{key:15}: {value}")
-        print("-" * 30)  # separator line

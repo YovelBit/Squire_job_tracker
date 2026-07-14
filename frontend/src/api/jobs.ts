@@ -14,6 +14,8 @@ export interface Job {
   application_url?: string;
   created_at?: string;
   last_updated?: string;
+  cv?: string;
+  cover_letter?: string;
 }
 
 export interface JobFilter {
@@ -37,6 +39,8 @@ export interface JobCreate {
   next_action?: string;
   notes?: string;
   application_url?: string;
+  cv?: string;
+  cover_letter?: string;
 }
 
 export interface JobUpdate extends Partial<JobCreate> {}

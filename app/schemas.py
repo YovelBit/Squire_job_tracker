@@ -18,7 +18,8 @@ class JobBase(BaseModel):
     next_action: Optional[date] = None
     notes: Optional[str] = None
     application_url: Optional[str] = None
-
+    cv: Optional[str] = None
+    cover_letter: Optional[str] = None
 
 # --------------------------------------------------
 # Schema for creating a new job (client input)

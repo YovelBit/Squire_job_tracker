@@ -1,0 +1,68 @@
+name: CI
+
+# Run on every push and pull request targeting main
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ─────────────────────────────────────────────
+  # Job 1: Backend lint (Python / ruff)
+  # ─────────────────────────────────────────────
+  backend-lint:
+    name: Backend lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4 #clones into the virtual repo
+
+      - name: Set up Python
+        uses: actions/setup-python@v5 #installs the python package on the virtual machine
+        with:
+          python-version: "3.13"
+
+      - name: Install dev dependencies
+        run: pip install -r requirements-dev.txt #runs the command to install dependecies 
+
+      - name: Run ruff
+        run: ruff check app/ #runs ruff om the app
+
+  # ─────────────────────────────────────────────
+  # Job 2: Frontend type-check, lint, and build
+  # ─────────────────────────────────────────────
+  frontend-ci:
+    name: Frontend CI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4 #clone into virtual repo
+
+      - name: Set up Node
+        uses: actions/setup-node@v4 #install node.js on the runner
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json #caches packages needed, so we wont re download all of them each time
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci # clean install of the packages listed in the global cache
+
+      - name: Type check
+        working-directory: frontend
+        run: npx tsc --noEmit #run a check on all type script files, and see if there are any type script errors, BUT NO TO PRODUCE ANY COMPILED FILES
+
+      - name: Lint
+        working-directory: frontend
+        run: npx eslint . --ext ts,tsx --max-warnings 0 # checking the files but for logical bugs
+
+      - name: Build
+        working-directory: frontend
+        run: npm run build
+        env:
+          # Provide a placeholder so Vite doesn't fail on a missing env var
+          VITE_API_BASE_URL: http://localhost:8000

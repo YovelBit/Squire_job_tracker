@@ -3,35 +3,16 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     console.log("Background received:", msg);
 
     if (msg.action === "save_job") {
-      // CHANGED: Try the cached token first instead of always logging in fresh.
-      // getCachedToken() reads from chrome.storage.sync — no network call needed.
-      let token = await getCachedToken();
-
+      // Step 1: Login first
+      const token = await loginToAPI();
       if (!token) {
-        // No cached token yet (first use, or storage was cleared) — log in now.
-        console.log("No cached token, logging in...");
-        token = await loginToAPI();
-        if (!token) {
-          console.error("Could not log in.");
-          sendResponse({ success: false, error: "Login failed" });
-          return;
-        }
+        console.error("Could not log in.");
+        sendResponse({ success: false, error: "Login failed" });
+        return;
       }
 
-      // Step 2: Send job to backend using whatever token we have
-      let result = await sendJobToAPI(token, msg.payload);
-
-      // ADDED: Handle the case where the cached token has expired (API returns 401).
-      // Re-login once and retry — after this, the new token is cached for next time.
-      if (result.expired) {
-        console.log("Token expired, re-logging in...");
-        token = await loginToAPI();
-        if (!token) {
-          sendResponse({ success: false, error: "Session expired — re-login failed" });
-          return;
-        }
-        result = await sendJobToAPI(token, msg.payload);
-      }
+      // Step 2: Send job to backend
+      const result = await sendJobToAPI(token, msg.payload);
 
       // Step 3: Send result back to popup
       sendResponse(result);
@@ -41,14 +22,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   // CRITICAL: keep message channel open for async
   return true;
 });
-
-// ADDED: Reads the token that loginToAPI() already saves to chrome.storage.sync.
-// Returns the token string, or null if nothing is stored yet.
-function getCachedToken() {
-  return new Promise((resolve) => {
-    chrome.storage.sync.get(["token"], (result) => resolve(result.token || null));
-  });
-}
 
 function getStoredSettings() {
   return new Promise((resolve) => {
@@ -122,13 +95,6 @@ async function sendJobToAPI(token, jobPayload) {
       body: JSON.stringify(apiPayload),
     });
 
-    // ADDED: Detect an expired/invalid token (401 Unauthorized).
-    // Returning { expired: true } signals the caller to re-login and retry,
-    // rather than treating it as a permanent failure.
-    if (response.status === 401) {
-      return { expired: true };
-    }
-
     if (!response.ok) {
       const err = await response.json();
       console.error("Failed to save job:", err);
@@ -140,8 +106,6 @@ async function sendJobToAPI(token, jobPayload) {
     return { success: true, data };
   } catch (err) {
     console.error("Job save error:", err);
-    // CHANGED: was returning the raw err object, which isn't serializable over
-    // the message channel. Using err.message (a plain string) instead.
-    return { success: false, error: err.message };
+    return { success: false, error: err };
   }
 }

@@ -18,7 +18,9 @@ const defaultJob: JobCreate = {
   date_applied: '',
   next_action: '',
   notes: '',
-  application_url: ''
+  application_url: '',
+  cv: '',
+  cover_letter: ''
 };
 
 const JobFormModal = ({ open, onClose, onSubmit, initialData }: Props) => {
@@ -130,6 +132,20 @@ const JobFormModal = ({ open, onClose, onSubmit, initialData }: Props) => {
                 name="notes"
                 placeholder="Notes"
                 value={form.notes ?? ''}
+                onChange={handleChange}
+                rows={3}
+              />
+              <textarea
+                name="cv"
+                placeholder="CV / Resume"
+                value={form.cv ?? ''}
+                onChange={handleChange}
+                rows={3}
+              />
+              <textarea
+                name="cover_letter"
+                placeholder="Cover letter"
+                value={form.cover_letter ?? ''}
                 onChange={handleChange}
                 rows={3}
               />

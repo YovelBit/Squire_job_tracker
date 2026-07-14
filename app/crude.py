@@ -6,6 +6,7 @@ from datetime import timezone, datetime
 from pathlib import Path
 from app import util
 import uuid
+import os
 
 
 IMMUTABLE_FIELDS = {"job_id", "public_id", "user_id", "created_at", "last_updated"}

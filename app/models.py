@@ -30,7 +30,6 @@ class Job(Base):
     title_key = Column(String, nullable=False)
     location_key = Column(String)
     source_key = Column(String)
-    user = relationship("User", back_populates="jobs")
 
     # Core metadata
     date_applied = Column(Date, nullable=False)
