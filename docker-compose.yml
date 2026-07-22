@@ -2,7 +2,6 @@ services:
   db:
     image: postgres:16
     container_name: squire-db
-    # you don't actually need env_file here unless you really want it
     environment:
       POSTGRES_USER: squire
       POSTGRES_PASSWORD: squire

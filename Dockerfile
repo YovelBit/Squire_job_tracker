@@ -8,8 +8,10 @@ WORKDIR /usr/src/app
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy your whole project into the container
-COPY . .
+# Copy only backend-relevant files
+COPY alembic.ini ./
+COPY alembic/ ./alembic/
+COPY app/ ./app/
 
 # Run Alembic migrations then start the CLI app
 CMD ["bash", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
