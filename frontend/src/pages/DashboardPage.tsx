@@ -3,8 +3,10 @@ import toast from 'react-hot-toast';
 import FilterBar from '../components/FilterBar';
 import JobFormModal from '../components/JobFormModal';
 import JobTable from '../components/JobTable';
+import KpiBar from '../components/KpiBar';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { Job, JobCreate, JobFilter, JobUpdate, createJob, deleteJob, filterJobs, updateJob } from '../api/jobs';
+import { QuickFilter, applyQuickFilter } from '../utils/kpiMetrics';
 
 const DashboardPage = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -15,6 +17,7 @@ const DashboardPage = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [quickFilter, setQuickFilter] = useState<QuickFilter>(null);
 
   const fetchJobs = async () => {
     setLoading(true);
@@ -41,6 +44,7 @@ const DashboardPage = () => {
   const handleClearFilters = () => {
     setFilters({});
     setSearchTerm('');
+    setQuickFilter(null);
   };
 
   useEffect(() => {
@@ -58,6 +62,8 @@ const DashboardPage = () => {
       (job) => job.company_display.toLowerCase().includes(lower) || job.title_display.toLowerCase().includes(lower)
     );
   }, [jobs, searchTerm]);
+
+  const tableJobs = useMemo(() => applyQuickFilter(visibleJobs, quickFilter), [visibleJobs, quickFilter]);
 
   const handleSortChange = (column: keyof Job) => {
     if (orderBy === column) {
@@ -109,6 +115,8 @@ const DashboardPage = () => {
 
   return (
     <>
+      <KpiBar jobs={jobs} activeFilter={quickFilter} onFilterToggle={setQuickFilter} />
+
       <FilterBar
         filters={filters}
         onChange={handleFilterChange}
@@ -131,7 +139,7 @@ const DashboardPage = () => {
         <LoadingSpinner />
       ) : (
         <JobTable
-          jobs={visibleJobs}
+          jobs={tableJobs}
           onEdit={openEditModal}
           onDelete={handleDeleteJob}
           orderBy={orderBy}
